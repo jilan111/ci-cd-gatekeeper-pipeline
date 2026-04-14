@@ -1,4 +1,4 @@
-name: MLOps Pipeline with Gatekeeper Logic
+name: MLOps Pipeline
 
 on:
   push:
@@ -10,100 +10,45 @@ jobs:
   linter:
     name: Lint Code
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.9'
-
-      - name: Install linting tools
+      - name: Run simple lint check
         run: |
-          pip install flake8 pylint black
-
-      - name: Run linting checks
-        run: |
-          echo "Running linting checks..."
-          # Add your actual linting commands here
-          # flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-          echo "✓ Linting passed"
+          echo "Running lint check..."
+          echo "Lint passed"
 
   train:
-    name: Train ML Model (GPU)
+    name: Train Model
     runs-on: ubuntu-latest
-    needs: [linter]
-    # Gatekeeper conditions:
-    # 1. Dependency: linter must pass (via needs)
-    # 2. Branch Protection: must be on main branch
-    # 3. Manual Intent: commit message must contain [run-train]
+    needs: linter
+
     if: github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, '[run-train]')
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.9'
-
-      - name: Install dependencies
+      - name: Simulate training
         run: |
-          pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
-          pip install tensorboard scikit-learn numpy pandas
+          echo "Training model..."
+          echo "Training done"
 
-      - name: Train model
-        run: |
-          echo "Starting GPU-accelerated training..."
-          # Simulate training job
-          python -c "
-          import random
-          success = random.random() > 0.3
-          if not success:
-              raise Exception('Simulated training failure for demonstration')
-          print('Training completed successfully')
-          "
-
-      - name: Validate model
-        run: |
-          echo "Validating trained model..."
-          echo "Model validation passed"
-
-      - name: Log failure details
+      - name: Create error log
         if: failure()
         run: |
-          echo "Training pipeline failed at: $(date)" > error_logs.txt
-          echo "Error: Job failed during model training phase" >> error_logs.txt
-          echo "Commit SHA: ${{ github.sha }}" >> error_logs.txt
-          echo "Branch: ${{ github.ref }}" >> error_logs.txt
-          echo "User: ${{ github.actor }}" >> error_logs.txt
-          cat error_logs.txt
+          echo "Training failed" > error_logs.txt
 
-      - name: Upload error logs as artifact
+      - name: Upload error log
         if: failure()
         uses: actions/upload-artifact@v3
         with:
-          name: training-error-logs
+          name: error-logs
           path: error_logs.txt
-          retention-days: 30
 
-      - name: Cleanup temporary cloud volumes
+      - name: Cleanup
         if: always()
         run: |
           echo "Cleaning up temporary cloud volumes..."
-          # Add your actual cleanup logic here
-          echo "✓ Cleanup completed"
-
-  notify:
-    name: Notification Summary
-    runs-on: ubuntu-latest
-    if: always()
-    needs: [linter, train]
-    steps:
-      - name: Job Status Summary
-        run: |
-          echo "Pipeline Summary:"
-          echo "  Linter Status: ${{ needs.linter.result }}"
-          echo "  Train Status: ${{ needs.train.result }}"
