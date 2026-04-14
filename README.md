@@ -166,3 +166,7 @@ When you push to `main` WITH `[run-train]` in commit message:
 
 **Q: How do I download the error logs?**
 - A: After a failed `train` job, go to the workflow run → Artifacts section → Download `training-error-logs.zip`
+
+## Testing Gatekeeper Logic
+
+This shows resource governance in action.
