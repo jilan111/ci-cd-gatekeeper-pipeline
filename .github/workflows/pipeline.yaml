@@ -1,4 +1,4 @@
-name: Assignment 6 - CI CD Gatekeeper Pipeline
+name: Assignment 6 - Pipeline with Gatekeeper Logic
 
 on:
   push:
